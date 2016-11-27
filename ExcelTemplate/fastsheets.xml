@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<WorkBook version="1.0">
+
+  <!--定义参数-->
+  <parameters>
+    <parameter name="ds" receive="ds" type="System.Data.DataSet" />
+  </parameters>
+  
+  <!--快速导出-->
+  <fastsheets useds="parameters.ds" />
+</WorkBook>

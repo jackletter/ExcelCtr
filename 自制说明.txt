@@ -1,0 +1,41 @@
+﻿HSSF是POI工程对Excel 97(-2007)文件操作的纯Java实现
+XSSF是POI工程对Excel 2007 OOXML (.xlsx)文件操作的纯Java实现
+
+从POI 3.8版本开始，提供了一种基于XSSF的低内存占用的API----SXSSF 
+
+/**** apache poi 的说明 *****/
+Excel (SS=HSSF+XSSF)
+Word (HWPF+XWPF)
+PowerPoint (HSLF+XSLF)
+OpenXML4J (OOXML)
+OLE2 Filesystem (POIFS)
+OLE2 Document Props (HPSF)
+Outlook (HSMF)
+Visio (HDGF+XDGF)
+TNEF (HMEF)
+Publisher (HPBF)
+Logging framework
+
+
+/**
+现在提供的功能:
+一、导出
+	1.一个DataSet直接导出,默认是DataSet中的每一个table都生成一个Sheet,并且第一行使用table的列名
+	2.导出时为每一个生成的Sheet添加一个标题栏
+	3.导出时为每一个生成的Sheet指定呀进行垂直合并的列的序号字符串
+二、导入
+	1.可以直接将一个excel文件导入成DataSet,默认为每个Sheet生成一个table,并且每个Sheet的第一行作为列名给相应table,数据从第二行开始
+	2.可以将指定Sheet序号(从0开始)或指定Sheet名称的Sheet读取出来并且为每一个Sheet指定列头所在的序号,列头的下一行为数据
+	3.可以将指定Sheet序号(从0开始)或指定Sheet名称的Sheet读取出来并且使用自动生成的列名(只需要给定数据内容的起始行索引和列索引(从0开始))
+三、导出可选择项
+	1.可以为每一个Sheet指定一个标题头,如果没指定或在SheetHeaders集合中指定索引处为空或者null就不给对应的Sheet添加标题头,SheetHeaders集合的长度小于Sheet的个数时认为后面的Sheet不使用标题头
+	2.可以为每一个Sheet指定要合并的列,如果一个DataSet中有三个表,要对第二张表的列2,列4进行垂直合并,则传参为:new List<string>{"","2,4"}
+四、导入可选择项
+	1.指定要导入的Sheet名或Sheet序号集合
+	2.指定Sheet中列头所在的行的序号
+
+
+
+
+
+*/

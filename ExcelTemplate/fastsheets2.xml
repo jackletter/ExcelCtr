@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<WorkBook version="1.0">
+
+  <!--定义参数-->
+  <parameters>
+    <parameter name="ordercol" receive="ordercol" type="System.Data.String" />
+    <parameter name="connstr" receive="connstr" type="System.String" />
+    <parameter name="dbtype" receive="dbtype" type="System.String" />
+  </parameters>
+
+  <!--定义数据库访问对象-->
+  <idbs>
+    <idb name="default">
+      <connstr value="Data Source=.;Initial Catalog=JACKOA;User ID=sa;Password=sa;" />
+      <dbtype value="SQLSERVER" />
+    </idb>
+  </idbs>
+  
+  <!--定义计算结果表-->
+  <caldts>
+    <caldt name="Person">
+      <sqltmp>
+        <![CDATA[select * from Person]]>
+      </sqltmp>
+      <useidb  value="idbs.default" />
+    </caldt>
+    <caldt name="TJ">
+      <sqltmp>
+        <![CDATA[select * from TJ]]>
+      </sqltmp>
+      <useidb  value="idbs.default" />
+    </caldt>
+  </caldts>
+
+  <!--快速带参数导出-->
+  <fastsheets>
+    <fastsheet usedt="caldts.Person" name="人员表">
+      <!--如果有title就写在第一行最上面-->
+      <title value="人员信息表" />
+    </fastsheet>
+    <fastsheet usedt="caldts.TJ">
+      <!--如果有title就写在第一行最上面-->
+      <title value="年度统计表" />
+      <combinecolindexs value="A,B" />
+    </fastsheet>
+  </fastsheets>
+</WorkBook>

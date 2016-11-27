@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<WorkBook version="20161017">
+
+  <!--定义参数-->
+  <parameters>
+    <!--默认参数-->
+    <!--用户姓名-->
+    <parameter name="uname" receive="uname" type="System.String" />
+    <!--用户ID-->
+    <parameter name="uid" receive="uid" type="System.String" />
+    <!--当前日期如:2016-10-23-->
+    <parameter name="date" receive="date" type="System.String" />
+    <!--当前日期2如:2016年10月23日-->
+    <parameter name="date2" receive="date2" type="System.String" />
+    <!--当前日期3如:二零一六年十月二十三日-->
+    <parameter name="date3" receive="date3" type="System.String" />
+    <!--当前日期4如:2016年10月-->
+    <parameter name="date4" receive="date4" type="System.String" />
+    <!--当前日期5如:二零一六年十月-->
+    <parameter name="date5" receive="date5" type="System.String" />
+    <!--当前时间如:2016-10-23 13:58:23-->
+    <parameter name="datetime" receive="datetime" type="System.String" />
+    <!--当前时间2如:2016年10月23日 13时58分23秒-->
+    <parameter name="datetime2" receive="datetime2" type="System.String" />
+
+    <!--其他参数-->
+    <parameter name="id" receive="id" type="System.String" />
+    <parameter name="ordercol" receive="ordercol" type="System.String" />    
+  </parameters>
+
+  <!--定义数据库访问对象-->
+  <idbs>
+    <idb name="default">
+      <connstr value="Data Source=.;Initial Catalog=JACKOA;User ID=sa;Password=sa;" />
+      <dbtype value="SQLSERVER" />
+    </idb>
+  </idbs>
+
+  <!--定义计算项-->
+  <calitems>
+    <calitem name="XMMC">
+      <sqltmp>
+        <![CDATA[select top 1 XMMC from ZJBF where ID0='{0}']]>
+      </sqltmp>
+      <useidb  value="idbs.default" />
+      <usepara value="parameters.id" />
+    </calitem>
+    <calitem name="ZDWZ">
+      <sqltmp>
+        <![CDATA[select top 1 ZDWZ from ZJBF where ID0='{0}']]>
+      </sqltmp>
+      <useidb  value="idbs.default" />
+      <usepara value="parameters.id" />
+    </calitem>
+    <calitem name="BCJE">
+      <sqltmp>
+        <![CDATA[select top 1 BCJE from ZJBF where ID0='{0}']]>
+      </sqltmp>
+      <useidb  value="idbs.default" />
+      <usepara value="parameters.id" />
+    </calitem>
+  </calitems>
+
+  <!--定义计算结果表-->
+  <caldts>
+    <caldt name="TJ">
+      <sqltmp>
+        <![CDATA[select top 1 * from TJ where 1>2 order by {0} asc]]>
+      </sqltmp>
+      <useidb  value="idbs.default" />
+      <usepara value="parameters.ordercol" />
+    </caldt>
+  </caldts>
+
+  <!--使用打印模板-->
+  <sheets>
+    <sheet name="Sheet1">
+      <rowmass>
+        <row model="single" position="absolute" index="2">
+          <coltmp index="B" value="#parameters.id#" />
+        </row>
+        <row model="single" position="absolute" index="3">
+          <coltmp index="B" value="#calitems.XMMC#【#parameters.date2#】" />
+        </row>
+        <row model="single" position="absolute" index="4">
+          <coltmp index="B" value="#calitems.ZDWZ#" />
+        </row>
+        <row model="single" position="absolute" index="5">
+          <coltmp index="B" value="#calitems.BCJE#" />
+        </row>
+        <row model="single" position="absolute" index="6">
+          <coltmp index="B" value="#parameters.uname#" />
+          <coltmp index="G" value="#parameters.date2#" />
+        </row>
+      </rowmass>
+      <pic>
+        <from model="QRCode" value="项目【#calitems.XMMC#】补偿金额【#calitems.BCJE#】" QRSize="100" />
+        <stretch model="original_size">
+          <start col="G" row="8" offx="0" offy="0" />
+        </stretch>
+      </pic>
+    </sheet>
+    <sheet name="Sheet2">
+      <rowmass>
+        <row model="cycle" binddt="caldts.TJ" position="absolute" index="3">
+          <coltmp index="A" value="#binddt.NianDu#" merge="row" />
+          <coltmp index="B" value="#binddt.YueFen#月" />
+          <coltmp index="C" value="#binddt.ChengBen#" />
+          <coltmp index="D" value="#binddt.ShouLiang#" />
+          <coltmp index="E" value="#binddt.JingZhuan#" />
+        </row>
+        <row model="single" position="relative" index="1">
+          <coltmp index="B" value="#parameters.uname#" />
+          <coltmp index="E" value="#parameters.datetime#" />
+        </row>
+      </rowmass>
+    </sheet>
+  </sheets>
+</WorkBook>
