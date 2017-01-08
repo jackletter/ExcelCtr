@@ -65,7 +65,7 @@
   <caldts>
     <caldt name="TJ">
       <sqltmp>
-        <![CDATA[select top 1 * from TJ where 1>2 order by {0} asc]]>
+        <![CDATA[select top 1 * from TJ  order by {0} asc]]>
       </sqltmp>
       <useidb  value="idbs.default" />
       <usepara value="parameters.ordercol" />
@@ -103,9 +103,9 @@
     <sheet name="Sheet2">
       <rowmass>
         <row model="cycle" binddt="caldts.TJ" position="absolute" index="3">
-          <coltmp index="A" value="#binddt.NianDu#" merge="row" />
+          <coltmp index="A" value="#binddt.NianDu#" mergekey="#binddt.NianDu#" />
           <coltmp index="B" value="#binddt.YueFen#月" />
-          <coltmp index="C" value="#binddt.ChengBen#" />
+          <coltmp index="C" value="#binddt.ChengBen#" mergekey="#binddt.YueFen##binddt.ChengBen#" />
           <coltmp index="D" value="#binddt.ShouLiang#" />
           <coltmp index="E" value="#binddt.JingZhuan#" />
         </row>

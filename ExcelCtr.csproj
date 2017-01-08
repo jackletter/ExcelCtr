@@ -92,6 +92,7 @@
     <Content Include="lib\NPOI.OOXML.dll" />
     <Content Include="lib\NPOI.OpenXml4Net.dll" />
     <Content Include="lib\NPOI.OpenXmlFormats.dll" />
+    <Content Include="lib\ThoughtWorks.QRCode.dll" />
     <Content Include="自制说明.txt" />
   </ItemGroup>
   <ItemGroup>

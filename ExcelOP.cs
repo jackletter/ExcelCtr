@@ -222,14 +222,14 @@ namespace ExcelCtr
             ht.Add("datetime2", DateTime.Now.ToString("yyyy年MM月dd日 HH时mm分ss秒"));
             ht.Add("id", 1);
             ht.Add("ordercol", "ID0");
-            //ExcelOP.WriteWithTemplate(ht, "ExcelTemplate/sheets.xml", "sheets.xls");
+            ExcelOP.WriteWithTemplate(ht, "ExcelTemplate/sheets.xml", "sheets.xls");
 
-            DataSet ds=GetDs();
-            ds.Tables[0].Rows.Clear();
-            ht.Add("ds", ds);
+            //DataSet ds=GetDs();
+            //ds.Tables[0].Rows.Clear();
+            //ht.Add("ds", ds);
             
             //ExcelOP.WriteWithTemplate(ht, "ExcelTemplate/fastsheets2.xml", "fastsheets2.xls");
-            ExcelOP.WriteWithTemplate(ht, "ExcelTemplate/sheets.xml", "sheets.xls");
+            //ExcelOP.WriteWithTemplate(ht, "ExcelTemplate/sheets.xml", "sheets.xls");
             //ExcelOP.WriteWithTemplate(new Hashtable(), @"G:\work\岳阳四全项目\LandSite2\ExcelTemplate\Out\储备计划.xml", @"c:\12.xls");
             Console.WriteLine("ok");
             Console.ReadLine();

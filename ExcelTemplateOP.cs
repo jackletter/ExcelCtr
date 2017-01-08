@@ -551,7 +551,7 @@ namespace ExcelCtr
                                         else
                                         {
 
-                                            List<string[]> coltmps = new List<string[]>();//存储模板列的配置参数
+                                            List<string[]> coltmps = new List<string[]>();//存储模板列的配置参数,格式:0-索引,1-模板配置值,2-模板合并控制键
 
                                             #region 首先装载模板列的配置参数
                                             row.ChildNodes.OfType<XmlElement>()
@@ -561,15 +561,18 @@ namespace ExcelCtr
                                                 {
                                                     string coltmp_index = coltmp.GetAttribute("index") ?? "";
                                                     string coltmp_value = coltmp.GetAttribute("value") ?? "";
-                                                    string coltmp_merge = coltmp.GetAttribute("merge") ?? "";
+                                                    string coltmp_merge = coltmp.GetAttribute("mergekey") ?? "";
+                                                    //模板列索引不能为空
                                                     if (coltmp_index == "")
                                                     {
                                                         throw new Exception("循环行的列模板coltmp标签的属性index不能为空.");
                                                     }
+                                                    //模板列的引用,配置里找不到就去excel对应单元格中去找
                                                     if (coltmp_value == "")
                                                     {
                                                         coltmp_value = isheet.GetRow(currentrow).GetCell(GetColIndex(coltmp_index), MissingCellPolicy.CREATE_NULL_AS_BLANK).StringCellValue ?? "";
                                                     }
+                                                    //模板引用不为空的话就添加存储
                                                     if (coltmp_value != "")
                                                     {
                                                         coltmps.Add(new string[] { coltmp_index, coltmp_value, coltmp_merge });
@@ -586,8 +589,18 @@ namespace ExcelCtr
                                                 //解析当前行
                                                 coltmps.ForEach(arr =>
                                                 {
-                                                    string res = ParseCycleVal(arr, curdt, i);
-                                                    isheet.GetRow(currentrow).GetCell(GetColIndex(arr[0]), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res);
+                                                    string[] res = ParseCycleVal(arr, curdt, i);
+                                                    isheet.GetRow(currentrow).GetCell(GetColIndex(arr[0]), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res[0]);
+                                                    //如果存在控制合并键值,就进行预合并处理
+                                                    if (arr[2] != "")
+                                                    {
+                                                        //将合并控制键对应的值填充进当前数据表中
+                                                        if (!curdt.Columns.Contains(arr[2]))
+                                                        {
+                                                            curdt.Columns.Add(new DataColumn(arr[2]));
+                                                        }
+                                                        curdt.Rows[i][arr[2]] = res[1];
+                                                    }
                                                 });
                                                 //当前行+1
                                                 currentrow++;
@@ -595,16 +608,18 @@ namespace ExcelCtr
                                             //回到循环行的最后一行
                                             currentrow--;
                                             #region 纵向合并单元格
-                                            coltmps.Where<string[]>(arr => arr[2] == "row").ToList<string[]>()
+                                            coltmps.Where<string[]>(arr => arr[2] != "").ToList<string[]>()
                                             .ForEach(arr =>
                                             {
-                                                if (curdt.Rows.Count > 1)
+                                                if (curdt.Rows.Count > 1)//数据记录数大于1时才进行合并
                                                 {
-                                                    int curindex = cyclestartrow_index;
-                                                    string val = (ExcelHelper.GetCellValue(isheet.GetRow(curindex).GetCell(GetColIndex(arr[0]))) ?? "").ToString();
+                                                    int curindex = cyclestartrow_index;//拿到循环行的起始行索引
+                                                    //string val = (ExcelHelper.GetCellValue(isheet.GetRow(curindex).GetCell(GetColIndex(arr[0]))) ?? "").ToString();
+                                                    string val = curdt.Rows[0][arr[2]].ToString();//拿到合并控制键对应的数据值
                                                     for (int i = 1; i < curdt.Rows.Count; i++)
                                                     {
-                                                        string realval = (ExcelHelper.GetCellValue(isheet.GetRow(cyclestartrow_index + i).GetCell(GetColIndex(arr[0]))) ?? "").ToString();
+                                                        //string realval = (ExcelHelper.GetCellValue(isheet.GetRow(cyclestartrow_index + i).GetCell(GetColIndex(arr[0]))) ?? "").ToString();
+                                                        string realval = curdt.Rows[i][arr[2]].ToString();//拿到当前行合并控制键对应的数据值
                                                         if (realval == val)
                                                         {
                                                             //匹配成功
@@ -789,68 +804,76 @@ namespace ExcelCtr
             return res;
         }
 
-        /// <summary>解析循环行配置列的属性value的实际值
+        /// <summary>解析循环行配置列的属性value的实际值,以及控制合并的值
         /// </summary>
         /// <param name="colval">如:qwe#parameters.caseno#hjk或#binddt.YueFen#月</param>
         /// <param name="curdt">循环行绑定的表</param>
         /// <param name="arr">模板列的配置数组</param>
         /// <param name="i">数据表curdt进行到的行索引</param>
         /// <returns></returns>
-        private string ParseCycleVal(string[] arr, DataTable curdt, int i)
+        private string[] ParseCycleVal(string[] arr, DataTable curdt, int i)
         {
-            string res = "";
-            int index_c = 0;
+            string[] res = new string[2];
             Regex reg = new Regex(@"#(parameters|calitems|binddt)\.([^#]+)#");
-            Match mat = reg.Match(arr[1]);
-            string type = "";
-            string ext = "";
-            if (mat.Success)
+            for (int ii = 0; ii < 2; ii++)
             {
-                res += arr[1].Substring(index_c, mat.Index - index_c);
-                index_c = mat.Index + mat.Length;
-                type = mat.Groups[1].Value;
-                ext = mat.Groups[2].Value;
-                if (type == "parameters")
+                if (arr[ii + 1] == "")
                 {
-                    parameter p = this.parameters.Where<parameter>(pa => pa.name == ext).FirstOrDefault<parameter>();
-                    if (p == null) throw new Exception("找不到参数:" + mat.Groups[0].Value);
-                    res += p.value.ToString();
+                    res[ii] = "";
+                    continue;
                 }
-                else if (type == "calitems")
+                int index_c = 0;
+                Match mat = reg.Match(arr[ii + 1]);
+                string type = "";
+                string ext = "";
+                if (mat.Success)
                 {
-                    calitem cp = this.calitems.Where<calitem>(ca => ca.name == ext).FirstOrDefault<calitem>();
-                    if (cp == null) throw new Exception("找不到计算项:" + mat.Groups[0].Value);
-                    res += cp.value.ToString();
+                    res[ii] += arr[ii + 1].Substring(index_c, mat.Index - index_c);
+                    index_c = mat.Index + mat.Length;
+                    type = mat.Groups[1].Value;
+                    ext = mat.Groups[2].Value;
+                    if (type == "parameters")
+                    {
+                        parameter p = this.parameters.Where<parameter>(pa => pa.name == ext).FirstOrDefault<parameter>();
+                        if (p == null) throw new Exception("找不到参数:" + mat.Groups[0].Value);
+                        res[ii] += p.value.ToString();
+                    }
+                    else if (type == "calitems")
+                    {
+                        calitem cp = this.calitems.Where<calitem>(ca => ca.name == ext).FirstOrDefault<calitem>();
+                        if (cp == null) throw new Exception("找不到计算项:" + mat.Groups[0].Value);
+                        res[ii] += cp.value.ToString();
+                    }
+                    else if (type == "binddt")
+                    {
+                        res[ii] += curdt.Rows[i][ext].ToString();
+                    }
                 }
-                else if (type == "binddt")
+                while ((mat = mat.NextMatch()).Success)
                 {
-                    res += curdt.Rows[i][ext].ToString();
+                    res[ii] += arr[ii + 1].Substring(index_c, mat.Index - index_c);
+                    index_c = mat.Index + mat.Length;
+                    type = mat.Groups[1].Value;
+                    ext = mat.Groups[2].Value;
+                    if (type == "parameters")
+                    {
+                        parameter p = this.parameters.Where<parameter>(pa => pa.name == ext).FirstOrDefault<parameter>();
+                        if (p == null) throw new Exception("找不到参数:" + mat.Groups[0].Value);
+                        res[ii] += p.value.ToString();
+                    }
+                    else if (type == "calitems")
+                    {
+                        calitem cp = this.calitems.Where<calitem>(cal => cal.name == ext).FirstOrDefault<calitem>();
+                        if (cp == null) throw new Exception("找不到计算项:" + mat.Groups[0].Value);
+                        res[ii] += cp.value.ToString();
+                    }
+                    else if (type == "binddt")
+                    {
+                        res[ii] += curdt.Rows[i][ext].ToString();
+                    }
                 }
+                res[ii] += arr[ii + 1].Substring(index_c, arr[ii + 1].Length - index_c);
             }
-            while ((mat = mat.NextMatch()).Success)
-            {
-                res += arr[1].Substring(index_c, mat.Index - index_c);
-                index_c = mat.Index + mat.Length;
-                type = mat.Groups[1].Value;
-                ext = mat.Groups[2].Value;
-                if (type == "parameters")
-                {
-                    parameter p = this.parameters.Where<parameter>(pa => pa.name == ext).FirstOrDefault<parameter>();
-                    if (p == null) throw new Exception("找不到参数:" + mat.Groups[0].Value);
-                    res += p.value.ToString();
-                }
-                else if (type == "calitems")
-                {
-                    calitem cp = this.calitems.Where<calitem>(cal => cal.name == ext).FirstOrDefault<calitem>();
-                    if (cp == null) throw new Exception("找不到计算项:" + mat.Groups[0].Value);
-                    res += cp.value.ToString();
-                }
-                else if (type == "binddt")
-                {
-                    res += curdt.Rows[i][ext].ToString();
-                }
-            }
-            res += arr[1].Substring(index_c, arr[1].Length - index_c);
             return res;
         }
 
