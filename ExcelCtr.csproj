@@ -94,6 +94,8 @@
     <Content Include="lib\NPOI.OpenXmlFormats.dll" />
     <Content Include="lib\ThoughtWorks.QRCode.dll" />
     <Content Include="自制说明.txt" />
+	<Content Include="自制说明.docx" />
+	<Content Include="ExcelCtr参考手册.docx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ExcelTemplate\sheets.xls">
