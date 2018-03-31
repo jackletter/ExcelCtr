@@ -462,19 +462,32 @@ namespace ExcelCtr
                                             .ForEach(col =>
                                             {
                                                 string colindex = col.GetAttribute("index");
+                                                string colcelltype = col.GetAttribute("celltype");
                                                 colindex = (colindex ?? "").Trim(' ');
                                                 if (string.IsNullOrWhiteSpace(colindex)) throw new Exception("coltmp标签的index属性不能为空!");
                                                 string colval = col.GetAttribute("value") ?? "";
-                                                colval = colval.Trim(' ');
+                                                string celltype = col.GetAttribute("type") ?? "";
+                                                //colval = colval.Trim(' ');
                                                 if (colval == "")
                                                 {
                                                     colval = isheet.GetRow(currentrow).GetCell(GetColIndex(colindex), MissingCellPolicy.CREATE_NULL_AS_BLANK).StringCellValue ?? "";
                                                 }
-                                                colval = colval.Trim(' ');
+                                                //colval = colval.Trim(' ');
                                                 if (colval != "")
                                                 {
                                                     string res = ParseVal(colval);
-                                                    isheet.GetRow(currentrow).GetCell(GetColIndex(colindex), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res);
+                                                    if (celltype.ToLower() == "number")
+                                                    {
+                                                        double res_double;
+                                                        if (double.TryParse(res, out res_double))
+                                                        {
+                                                            isheet.GetRow(currentrow).GetCell(GetColIndex(colindex), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res_double);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        isheet.GetRow(currentrow).GetCell(GetColIndex(colindex), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res);
+                                                    }
                                                 }
 
                                             });
@@ -562,6 +575,7 @@ namespace ExcelCtr
                                                     string coltmp_index = coltmp.GetAttribute("index") ?? "";
                                                     string coltmp_value = coltmp.GetAttribute("value") ?? "";
                                                     string coltmp_merge = coltmp.GetAttribute("mergekey") ?? "";
+                                                    string coltmp_celltype = coltmp.GetAttribute("celltype") ?? "";
                                                     //模板列索引不能为空
                                                     if (coltmp_index == "")
                                                     {
@@ -575,7 +589,7 @@ namespace ExcelCtr
                                                     //模板引用不为空的话就添加存储
                                                     if (coltmp_value != "")
                                                     {
-                                                        coltmps.Add(new string[] { coltmp_index, coltmp_value, coltmp_merge });
+                                                        coltmps.Add(new string[] { coltmp_index, coltmp_value, coltmp_merge, coltmp_celltype });
                                                     }
                                                 });
                                             #endregion
@@ -590,7 +604,20 @@ namespace ExcelCtr
                                                 coltmps.ForEach(arr =>
                                                 {
                                                     string[] res = ParseCycleVal(arr, curdt, i);
-                                                    isheet.GetRow(currentrow).GetCell(GetColIndex(arr[0]), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res[0]);
+                                                    //输出列格式支持数字类型 2018-3-30
+                                                    ICell cell = isheet.GetRow(currentrow).GetCell(GetColIndex(arr[0]), MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                                                    if (arr[3] == "number")
+                                                    {
+                                                        double d_t;
+                                                        if (double.TryParse(res[0], out d_t))
+                                                        {
+                                                            cell.SetCellValue(d_t);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        cell.SetCellValue(res[0]);
+                                                    }
                                                     //如果存在控制合并键值,就进行预合并处理
                                                     if (arr[2] != "")
                                                     {

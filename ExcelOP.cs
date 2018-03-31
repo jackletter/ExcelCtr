@@ -23,7 +23,7 @@ namespace ExcelCtr
         /// <summary>将excel中的每一个表第一行为列名组合读取成一个dataset</summary>
         /// <param name="filePath"></param>
         /// <returns></returns>
-        public DataSet Read(string filePath)
+        public static DataSet Read(string filePath)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(filePath);
             return ds;
@@ -32,7 +32,7 @@ namespace ExcelCtr
         /// <summary>将excel中的每一个表第一行为列名组合读取成一个dataset</summary>
         /// <param name="stream"></param>
         /// <returns></returns>
-        public DataSet Read(Stream stream)
+        public static DataSet Read(Stream stream)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(stream);
             return ds;
@@ -43,7 +43,7 @@ namespace ExcelCtr
         /// <param name="sheetNames"></param>
         /// <param name="indexOfColNames"></param>
         /// <returns></returns>
-        public DataSet Read(string filePath, List<string> sheetNames, List<int> indexOfColNames)
+        public static DataSet Read(string filePath, List<string> sheetNames, List<int> indexOfColNames)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(filePath, sheetNames, indexOfColNames);
             return ds;
@@ -54,7 +54,7 @@ namespace ExcelCtr
         /// <param name="sheetNames"></param>
         /// <param name="indexOfColNames"></param>
         /// <returns></returns>
-        public DataSet Read(Stream stream, List<string> sheetNames, List<int> indexOfColNames)
+        public static DataSet Read(Stream stream, List<string> sheetNames, List<int> indexOfColNames)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(stream, sheetNames, indexOfColNames);
             return ds;
@@ -65,7 +65,7 @@ namespace ExcelCtr
         /// <param name="sheetIndexs"></param>
         /// <param name="indexOfColNames"></param>
         /// <returns></returns>
-        public DataSet Read(string filePath, List<int> sheetIndexs, List<int> indexOfColNames)
+        public static DataSet Read(string filePath, List<int> sheetIndexs, List<int> indexOfColNames)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(filePath, sheetIndexs, indexOfColNames);
             return ds;
@@ -76,7 +76,7 @@ namespace ExcelCtr
         /// <param name="sheetIndexs"></param>
         /// <param name="indexOfColNames"></param>
         /// <returns></returns>
-        public DataSet Read(Stream stream, List<int> sheetIndexs, List<int> indexOfColNames)
+        public static DataSet Read(Stream stream, List<int> sheetIndexs, List<int> indexOfColNames)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(stream, sheetIndexs, indexOfColNames);
             return ds;
@@ -88,7 +88,7 @@ namespace ExcelCtr
         /// <param name="hasColNames"></param>
         /// <param name="dataStartIndex"></param>
         /// <returns></returns>
-        public DataSet Read(string filePath, List<int> sheetIndexs, List<bool> hasColNames, List<int[]> dataStartIndex)
+        public static DataSet Read(string filePath, List<int> sheetIndexs, List<bool> hasColNames, List<int[]> dataStartIndex)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(filePath, sheetIndexs, hasColNames, dataStartIndex);
             return ds;
@@ -100,7 +100,7 @@ namespace ExcelCtr
         /// <param name="hasColNames"></param>
         /// <param name="dataStartIndex"></param>
         /// <returns></returns>
-        public DataSet Read(Stream stream, List<int> sheetIndexs, List<bool> hasColNames, List<int[]> dataStartIndex)
+        public static DataSet Read(Stream stream, List<int> sheetIndexs, List<bool> hasColNames, List<int[]> dataStartIndex)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(stream, sheetIndexs, hasColNames, dataStartIndex);
             return ds;
@@ -112,7 +112,7 @@ namespace ExcelCtr
         /// <param name="hasColNames"></param>
         /// <param name="dataStartIndex"></param>
         /// <returns></returns>
-        public DataSet Read(string filePath, List<string> sheetNames, List<bool> hasColNames, List<int[]> dataStartIndex)
+        public static DataSet Read(string filePath, List<string> sheetNames, List<bool> hasColNames, List<int[]> dataStartIndex)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(filePath, sheetNames, hasColNames, dataStartIndex);
             return ds;
@@ -124,7 +124,7 @@ namespace ExcelCtr
         /// <param name="hasColNames"></param>
         /// <param name="dataStartIndex"></param>
         /// <returns></returns>
-        public DataSet Read(Stream stream, List<string> sheetNames, List<bool> hasColNames, List<int[]> dataStartIndex)
+        public static DataSet Read(Stream stream, List<string> sheetNames, List<bool> hasColNames, List<int[]> dataStartIndex)
         {
             DataSet ds = ExcelHelper.ImportExceltoDs(stream, sheetNames, hasColNames, dataStartIndex);
             return ds;

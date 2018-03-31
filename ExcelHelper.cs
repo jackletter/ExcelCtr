@@ -170,19 +170,9 @@ namespace ExcelCtr
                         switch (column.DataType.ToString())
                         {
                             case "System.String": //字符串类型
-                                double result;
-                                if (isNumeric(drValue, out result))
-                                {
-
-                                    double.TryParse(drValue, out result);
-                                    newCell.SetCellValue(result);
-                                    break;
-                                }
-                                else
-                                {
-                                    newCell.SetCellValue(drValue);
-                                    break;
-                                }
+                                newCell.SetCellType(CellType.String);
+                                newCell.SetCellValue(drValue);
+                                break;
 
                             case "System.DateTime": //日期类型
                                 DateTime dateV;
