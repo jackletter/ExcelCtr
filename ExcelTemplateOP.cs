@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -78,49 +78,6 @@ namespace ExcelCtr
                 i.value = IDBFactory.CreateIDB(i.connstr_value, i.dbtype_value);
             });
 
-            //初始化计算项
-            this.calitems.ForEach((i) =>
-            {
-                //先拿到iDb
-                i.useidb_conf = i.useidb_conf ?? "";
-                if (i.useidb_conf.StartsWith("parameters."))
-                {
-                    parameter p = this.parameters
-                        .FirstOrDefault<parameter>(ii => ii.name == i.useidb_conf.Replace("parameters.", ""));
-                    if (p == null) throw new Exception("未找到数据库访问对象:" + i.useidb_conf);
-                    i.useidb_value = p.value as IDbAccess;
-                }
-                else if (i.useidb_conf.StartsWith("idbs."))
-                {
-                    idb p = this.idbs
-                        .FirstOrDefault<idb>(ii => ii.name == i.useidb_conf.Replace("idbs.", ""));
-                    if (p == null) throw new Exception("未找到数据库访问对象:" + i.useidb_conf);
-                    i.useidb_value = p.value as IDbAccess;
-                }
-
-                //获取para
-                i.listpara.ForEach(ii =>
-                {
-                    ii.name = ii.name ?? "";
-                    if (ii.name.StartsWith("parameters."))
-                    {
-                        parameter p = this.parameters.Single<parameter>(
-                            iii => iii.name == ii.name.Replace("parameters.", ""));
-                        if (p == null) throw new Exception("未找到参数:" + ii.name);
-                        ii.receive = p.receive;
-                        ii.type = p.type;
-                        ii.value = p.value;
-                    }
-                });
-
-                //进行计算
-                i.value = i.useidb_value
-                    .GetFirstColumnString(
-                    string.Format(i.sqltmp,
-                    i.listpara.Select<parameter, string>(ii => ii.value.ToString()).ToArray()));
-
-            });
-
             //初始化计算结果表
             this.caldts.ForEach((i) =>
             {
@@ -161,6 +118,197 @@ namespace ExcelCtr
 
             });
 
+            //初始化计算项
+            this.calitems.ForEach((i) =>
+            {
+                if (string.IsNullOrWhiteSpace(i.from))
+                {
+                    //根据sql语句计算
+                    #region
+                    //1.先拿到iDb
+                    i.useidb_conf = i.useidb_conf ?? "";
+                    if (i.useidb_conf.StartsWith("parameters."))
+                    {
+                        parameter p = this.parameters
+                            .FirstOrDefault<parameter>(ii => ii.name == i.useidb_conf.Replace("parameters.", ""));
+                        if (p == null) throw new Exception("未找到数据库访问对象:" + i.useidb_conf);
+                        i.useidb_value = p.value as IDbAccess;
+                    }
+                    else if (i.useidb_conf.StartsWith("idbs."))
+                    {
+                        idb p = this.idbs
+                            .FirstOrDefault<idb>(ii => ii.name == i.useidb_conf.Replace("idbs.", ""));
+                        if (p == null) throw new Exception("未找到数据库访问对象:" + i.useidb_conf);
+                        i.useidb_value = p.value as IDbAccess;
+                    }
+
+                    //2.获取para
+                    i.listpara.ForEach(ii =>
+                    {
+                        ii.name = ii.name ?? "";
+                        if (ii.name.StartsWith("parameters."))
+                        {
+                            parameter p = this.parameters.Single<parameter>(
+                                iii => iii.name == ii.name.Replace("parameters.", ""));
+                            if (p == null) throw new Exception("未找到参数:" + ii.name);
+                            ii.receive = p.receive;
+                            ii.type = p.type;
+                            ii.value = p.value;
+                        }
+                    });
+
+                    //3.进行计算
+                    i.value = i.useidb_value
+                        .GetFirstColumnString(
+                        string.Format(i.sqltmp,
+                        i.listpara.Select<parameter, string>(ii => ii.value.ToString()).ToArray()));
+                    #endregion
+                }
+                else
+                {
+                    //从计算表中引用的
+                    #region
+                    string from = i.from.Trim();
+                    if (!from.StartsWith("caldts."))
+                    {
+                        throw new Exception(string.Format("计算项\"{0}\"的from属性\"{1}\"必须以\"caldts.\"开头", i.name, i.from));
+                    }
+                    string[] arr = from.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (arr.Length < 3) throw new Exception(string.Format("计算项\"{0}\"的from属性\"{1}\"不符合规则,参照:\"caldts.JSYDYS.SJRQ\"", i.name, i.from));
+                    caldt dt = this.caldts.FirstOrDefault<caldt>(j => j.name == arr[1]);
+                    if (dt == null) throw new Exception(string.Format("计算项\"{0}\"的from属性\"{1}\"引用的计算表\"{2}\"未找到", i.name, i.from, arr[1]));
+                    if (!dt.value.Columns.Contains(arr[2])) throw new Exception(string.Format("计算项\"{0}\"的from属性\"{1}\"引用的计算表\"{2}\"中未找到列\"{3}\"", i.name, i.from, arr[1], arr[2]));
+                    DataRow[] rows = dt.value.Select();
+                    if (!string.IsNullOrWhiteSpace(i.filter))
+                    {
+                        //根据filter筛选符合条件的行
+                        rows = dt.value.Select(i.filter);
+                    }
+                    if (!string.IsNullOrWhiteSpace(i.fetch))
+                    {
+                        //根据fetch选取筛选后的行
+                        if (!(i.fetch.Contains('[') &&
+                            i.fetch.Contains(']') &&
+                            i.fetch.Contains(':')))
+                        {
+                            throw new Exception(string.Format("计算项\"{0}\"的fetch属性\"{1}\"不符合规则,参照:\"[0:5]\",见python字符串截取语法"));
+                        }
+                        List<DataRow> list = new List<DataRow>();
+                        string[] fetcharr = i.fetch.Replace("[", "").Replace("]", "").Split(new char[] { ':' }, StringSplitOptions.None);
+                        if (fetcharr.Length != 2)
+                        {
+                            throw new Exception(string.Format("计算项\"{0}\"的fetch属性\"{1}\"不符合规则,参照:\"[0:5]\",见python字符串截取语法"));
+                        }
+                        int start = int.Parse(fetcharr[0]);
+                        int end = int.Parse(fetcharr[1]);
+                        if (end < 0)
+                        {
+                            end += rows.Length;
+                        }
+                        if (!(end < start || start > rows.Length - 1))
+                        {
+                            for (var k = start; k < rows.Length && k < end; k++)
+                            {
+                                list.Add(rows[k]);
+                            }
+                        }
+                        rows = list.ToArray();
+                    }
+                    //根据聚合标志得到聚合后结果
+                    if (string.IsNullOrWhiteSpace(i.aggregate))
+                    {
+                        i.aggregate = "str_join(,)";
+                    }
+                    if (i.aggregate.StartsWith("str_join"))
+                    {
+                        //字符串拼接
+                        string joinstr = i.aggregate.Replace("str_join", "").Replace("(", "").Replace(")", "");
+                        string _t = "";
+                        for (var k = 0; k < rows.Length; k++)
+                        {
+                            string str = (rows[k][arr[2]] ?? "").ToString();
+                            if (string.IsNullOrWhiteSpace(str)) continue;
+                            if (k == 0)
+                            {
+                                _t += str;
+                            }
+                            else
+                            {
+                                _t += "," + str;
+                            }
+                        }
+                        i.value = _t;
+                    }
+                    else if (i.aggregate == "sum")
+                    {
+                        //求和计算
+                        double init = 0;
+                        for (var k = 0; k < rows.Length; k++)
+                        {
+                            string str = (rows[k][arr[2]] ?? "").ToString();
+                            double _t;
+                            if (double.TryParse(str, out _t))
+                            {
+                                init += _t;
+                            }
+                        }
+                        i.value = init.ToString();
+                    }
+                    else if (i.aggregate == "avg")
+                    {
+                        //不能转化为数字的不参与计算
+                        double init = 0;
+                        int len = 0;
+                        for (var k = 0; k < rows.Length; k++)
+                        {
+                            string str = (rows[k][arr[2]] ?? "").ToString();
+                            double _t;
+                            if (double.TryParse(str, out _t))
+                            {
+                                len++;
+                                init += _t;
+                            }
+                        }
+                        i.value = (init / len).ToString();
+                    }
+                    else if (i.aggregate == "min")
+                    {
+                        //不能转化为数字的不参与计算
+                        double init = 0;
+                        for (var k = 0; k < rows.Length; k++)
+                        {
+                            string str = rows[k][arr[2]].ToString();
+                            double _t;
+                            if (double.TryParse(str, out _t))
+                            {
+                                init = init > _t ? _t : init;
+                            }
+                        }
+                        i.value = init.ToString();
+                    }
+                    else if (i.aggregate == "max")
+                    {
+                        //不能转化为数字的不参与计算
+                        double init = 0;
+                        for (var k = 0; k < rows.Length; k++)
+                        {
+                            string str = rows[k][arr[2]].ToString();
+                            double _t;
+                            if (double.TryParse(str, out _t))
+                            {
+                                init = init > _t ? init : _t;
+                            }
+                        }
+                        i.value = init.ToString();
+                    }
+                    else if (i.aggregate == "count")
+                    {
+                        //求数量
+                        i.value = rows.Length.ToString();
+                    }
+                    #endregion
+                }
+            });
         }
 
         /// <summary>读取配置文件</summary>
@@ -233,25 +381,37 @@ namespace ExcelCtr
                             calitem cal = new calitem();
                             this.calitems.Add(cal);
                             cal.name = iii.GetAttribute("name");
-                            iii.ChildNodes.OfType<XmlElement>()
-                                .ToList<XmlElement>()
-                                .ForEach((iiii) =>
-                                {
-                                    if (iiii.Name == "sqltmp" && string.IsNullOrEmpty(cal.sqltmp))
+                            if (iii.HasAttribute("from"))
+                            {
+                                //该计算项是从计算表中引入的值
+                                cal.from = iii.GetAttribute("from");
+                                cal.fetch = iii.GetAttribute("fetch");
+                                cal.filter = iii.GetAttribute("filter");
+                                cal.aggregate = iii.GetAttribute("aggregate");
+                            }
+                            else
+                            {
+                                //该计算项是根据sql语句计算得来的
+                                iii.ChildNodes.OfType<XmlElement>()
+                                    .ToList<XmlElement>()
+                                    .ForEach((iiii) =>
                                     {
-                                        cal.sqltmp = iiii.InnerText.Trim(' ', '\t', '\r', '\n');
-                                    }
-                                    if (iiii.Name == "useidb" && string.IsNullOrEmpty(cal.useidb_conf))
-                                    {
-                                        cal.useidb_conf = iiii.GetAttribute("value");
-                                    }
-                                    if (iiii.Name == "usepara")
-                                    {
-                                        parameter p = this.parameters.FirstOrDefault<parameter>(para => para.name == iiii.GetAttribute("value").Replace("parameters.", ""));
-                                        if (p == null) throw new Exception("未找到参数:" + iiii.GetAttribute("value"));
-                                        cal.listpara.Add(p);
-                                    }
-                                });
+                                        if (iiii.Name == "sqltmp" && string.IsNullOrEmpty(cal.sqltmp))
+                                        {
+                                            cal.sqltmp = iiii.InnerText.Trim(' ', '\t', '\r', '\n');
+                                        }
+                                        if (iiii.Name == "useidb" && string.IsNullOrEmpty(cal.useidb_conf))
+                                        {
+                                            cal.useidb_conf = iiii.GetAttribute("value");
+                                        }
+                                        if (iiii.Name == "usepara")
+                                        {
+                                            parameter p = this.parameters.FirstOrDefault<parameter>(para => para.name == iiii.GetAttribute("value").Replace("parameters.", ""));
+                                            if (p == null) throw new Exception("未找到参数:" + iiii.GetAttribute("value"));
+                                            cal.listpara.Add(p);
+                                        }
+                                    });
+                            }
                         });
                 }
                 if (i.Name == "caldts" && caldts_count == 0)
@@ -997,6 +1157,12 @@ namespace ExcelCtr
             public IDbAccess useidb_value = null;
             public List<parameter> listpara = new List<parameter>();
             public string value { set; get; }
+
+            //引用计算表需要的属性
+            public string from { set; get; }
+            public string fetch { set; get; }
+            public string filter { set; get; }
+            public string aggregate { set; get; }
         }
 
         public class caldt
