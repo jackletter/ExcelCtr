@@ -234,7 +234,7 @@ namespace ExcelCtr
                             }
                             else
                             {
-                                _t += "," + str;
+                                _t += joinstr + str;
                             }
                         }
                         i.value = _t;
