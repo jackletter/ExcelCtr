@@ -42,7 +42,7 @@ namespace ExcelCtr
             {
                 if (ht[i.name] != null)
                 {
-                    i.value = ht[i.name];
+                    i.value = ht[i.name] ?? "";
                     ht.Remove(i.name);
                 }
             });
@@ -53,8 +53,8 @@ namespace ExcelCtr
                 {
                     name = i,
                     receive = i,
-                    type = ht[i].GetType() == null ? "" : ht[i].GetType().ToString(),
-                    value = ht[i]
+                    type = (ht[i] ?? "").GetType().ToString(),
+                    value = ht[i] ?? ""
                 });
             });
 
@@ -114,7 +114,7 @@ namespace ExcelCtr
                 i.value = i.useidb_value
                     .GetDataTable(
                     string.Format(i.sqltmp,
-                    i.listpara.Select<parameter, string>(ii => ii.value.ToString()).ToArray()));
+                    i.listpara.Select<parameter, string>(ii => (ii.value ?? "").ToString()).ToArray()));
 
             });
 
