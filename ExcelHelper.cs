@@ -36,6 +36,9 @@ namespace ExcelCtr
         {
             HSSFWorkbook workbook = new HSSFWorkbook();
             HSSFSheet sheet = null;
+            //自动换行单元格样式
+            ICellStyle cellStyle_crlf = workbook.CreateCellStyle();
+            cellStyle_crlf.WrapText = true;
 
             #region 右击文件 属性信息
 
@@ -104,7 +107,11 @@ namespace ExcelCtr
                             {
                                 HSSFRow headerRow = sheet.CreateRow(0) as HSSFRow;
                                 headerRow.HeightInPoints = 25;
-                                headerRow.CreateCell(0).SetCellValue(strHeaderTexts[i]);
+                                ICell cell = headerRow.CreateCell(0);
+                                ICellStyle cellStyle = workbook.CreateCellStyle();
+                                cellStyle.WrapText = true;
+                                cell.CellStyle = cellStyle;
+                                cell.SetCellValue(new HSSFRichTextString(strHeaderTexts[i]));
 
                                 HSSFCellStyle headStyle = workbook.CreateCellStyle() as HSSFCellStyle;
                                 headStyle.Alignment = NPOI.SS.UserModel.HorizontalAlignment.Center;
@@ -126,11 +133,10 @@ namespace ExcelCtr
 
                         {
                             HSSFRow headerRow = sheet.CreateRow(rowIndex) as HSSFRow;
-
-
                             HSSFCellStyle headStyle = workbook.CreateCellStyle() as HSSFCellStyle;
                             headStyle.Alignment = NPOI.SS.UserModel.HorizontalAlignment.Center;
                             headStyle.VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment.Center;
+                            headStyle.WrapText = true;
                             headerRow.HeightInPoints = 23;
                             HSSFFont font = workbook.CreateFont() as HSSFFont;
                             font.FontHeightInPoints = 11;
@@ -140,8 +146,9 @@ namespace ExcelCtr
 
                             foreach (DataColumn column in dtSource.Columns)
                             {
-                                headerRow.CreateCell(column.Ordinal).SetCellValue(column.ColumnName);
-                                headerRow.GetCell(column.Ordinal).CellStyle = headStyle;
+                                ICell cell = headerRow.CreateCell(column.Ordinal);
+                                cell.CellStyle = headStyle;
+                                cell.SetCellValue(new HSSFRichTextString(column.ColumnName));
 
                                 //设置列宽，这里我多加了10个字符的长度
                                 sheet.SetColumnWidth(column.Ordinal, (arrColWidth[column.Ordinal] + 10) * 256);
@@ -170,8 +177,9 @@ namespace ExcelCtr
                         switch (column.DataType.ToString())
                         {
                             case "System.String": //字符串类型
+                                newCell.CellStyle = cellStyle_crlf;
                                 newCell.SetCellType(CellType.String);
-                                newCell.SetCellValue(drValue);
+                                newCell.SetCellValue(new HSSFRichTextString(drValue));
                                 break;
 
                             case "System.DateTime": //日期类型

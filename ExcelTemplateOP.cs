@@ -191,17 +191,23 @@ namespace ExcelCtr
                             i.fetch.Contains(']') &&
                             i.fetch.Contains(':')))
                         {
-                            throw new Exception(string.Format("计算项\"{0}\"的fetch属性\"{1}\"不符合规则,参照:\"[0:5]\",见python字符串截取语法"));
+                            throw new Exception(string.Format("计算项\"{0}\"的fetch属性\"{1}\"不符合规则,必须包含'[',']',':'三个字符,参照:\"[0:5]\",见python字符串截取语法", i.name, i.fetch));
                         }
                         List<DataRow> list = new List<DataRow>();
                         string[] fetcharr = i.fetch.Replace("[", "").Replace("]", "").Split(new char[] { ':' }, StringSplitOptions.None);
                         if (fetcharr.Length != 2)
                         {
-                            throw new Exception(string.Format("计算项\"{0}\"的fetch属性\"{1}\"不符合规则,参照:\"[0:5]\",见python字符串截取语法"));
+                            throw new Exception(string.Format("计算项\"{0}\"的fetch属性\"{1}\"不符合规则,参照:\"[0:5]\",见python字符串截取语法", i.name, i.fetch));
                         }
+                        if (string.IsNullOrWhiteSpace(fetcharr[0])) fetcharr[0] = "0";
+                        if (string.IsNullOrWhiteSpace(fetcharr[1])) fetcharr[1] = rows.Length.ToString();
                         int start = int.Parse(fetcharr[0]);
                         int end = int.Parse(fetcharr[1]);
-                        if (end < 0)
+                        while (start < 0)
+                        {
+                            start += rows.Length;
+                        }
+                        while (end < 0)
                         {
                             end += rows.Length;
                         }
@@ -646,7 +652,18 @@ namespace ExcelCtr
                                                     }
                                                     else
                                                     {
-                                                        isheet.GetRow(currentrow).GetCell(GetColIndex(colindex), MissingCellPolicy.CREATE_NULL_AS_BLANK).SetCellValue(res);
+                                                        ICell cell = isheet.GetRow(currentrow).GetCell(GetColIndex(colindex), MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                                                        ICellStyle cellStyle = cell.CellStyle;
+                                                        if (cellStyle == null)
+                                                        {
+                                                            cellStyle = book.CreateCellStyle();
+                                                            cell.CellStyle = cellStyle;
+                                                        }
+                                                        cellStyle.WrapText = true;
+                                                        res = res.Replace("\\r", "\r")
+                                                            .Replace("\\n", "\n")
+                                                            .Replace("\\t", "\t");
+                                                        cell.SetCellValue(new HSSFRichTextString(res));
                                                     }
                                                 }
 
@@ -776,7 +793,17 @@ namespace ExcelCtr
                                                     }
                                                     else
                                                     {
-                                                        cell.SetCellValue(res[0]);
+                                                        ICellStyle cellStyle = cell.CellStyle;
+                                                        if (cellStyle == null)
+                                                        {
+                                                            cell.CellStyle = cellStyle;
+                                                            cellStyle = book.CreateCellStyle();
+                                                        }
+                                                        cellStyle.WrapText = true;
+                                                        res[0] = res[0].Replace("\\r", "\r")
+                                                            .Replace("\\n", "\n")
+                                                            .Replace("\\t", "\t");
+                                                        cell.SetCellValue(new HSSFRichTextString(res[0]));
                                                     }
                                                     //如果存在控制合并键值,就进行预合并处理
                                                     if (arr[2] != "")
